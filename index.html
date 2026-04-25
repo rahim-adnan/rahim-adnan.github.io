@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Adnan Rahim · AI Engineer</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    /* ── AI CHATBOT ─────────────────────────────────────── */
+    .chat-bubble {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      width: 58px;
+      height: 58px;
+      background: linear-gradient(135deg, #7c3aed, #4f46e5);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 9999;
+      box-shadow: 0 4px 24px rgba(124,58,237,0.5);
+      transition: transform 0.2s, box-shadow 0.2s;
+      border: none;
+    }
+    .chat-bubble:hover { transform: scale(1.1); box-shadow: 0 6px 32px rgba(124,58,237,0.7); }
+    .chat-bubble svg { width: 26px; height: 26px; fill: white; }
+    .chat-pulse {
+      position: absolute;
+      top: -3px; right: -3px;
+      width: 14px; height: 14px;
+      background: #22c55e;
+      border-radius: 50%;
+      border: 2px solid #0d0d14;
+      animation: pulse-dot 2s infinite;
+    }
+    @keyframes pulse-dot {
+      0%,100% { transform: scale(1); opacity:1; }
+      50% { transform: scale(1.3); opacity:0.7; }
+    }
+
+    .chat-window {
+      position: fixed;
+      bottom: 100px;
+      right: 28px;
+      width: 360px;
+      max-height: 520px;
+      background: #13131f;
+      border: 1px solid rgba(124,58,237,0.3);
+      border-radius: 18px;
+      display: flex;
+      flex-direction: column;
+      z-index: 9998;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+      overflow: hidden;
+      transform: scale(0.85) translateY(20px);
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .chat-window.open {
+      transform: scale(1) translateY(0);
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .chat-header {
+      padding: 16px 18px;
+      background: linear-gradient(135deg, #1e1b4b, #1e1035);
+      border-bottom: 1px solid rgba(124,58,237,0.2);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .chat-header-avatar {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, #7c3aed, #4f46e5);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+    }
+    .chat-header-info { flex: 1; }
+    .chat-header-name { font-size: 14px; font-weight: 600; color: #fff; }
+    .chat-header-status { font-size: 11px; color: #22c55e; }
+    .chat-close {
+      background: none; border: none; color: #888;
+      cursor: pointer; font-size: 18px; line-height: 1;
+      transition: color 0.2s;
+    }
+    .chat-close:hover { color: #fff; }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-height: 320px;
+    }
+    .chat-messages::-webkit-scrollbar { width: 4px; }
+    .chat-messages::-webkit-scrollbar-track { background: transparent; }
+    .chat-messages::-webkit-scrollbar-thumb { background: rgba(124,58,237,0.4); border-radius: 2px; }
+
+    .msg {
+      max-width: 85%;
+      padding: 10px 14px;
+      border-radius: 14px;
+      font-size: 13px;
+      line-height: 1.5;
+      animation: msg-in 0.3s ease;
+    }
+    @keyframes msg-in { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+    .msg.bot {
+      background: rgba(124,58,237,0.15);
+      border: 1px solid rgba(124,58,237,0.2);
+      color: #d4d4e8;
+      border-bottom-left-radius: 4px;
+      align-self: flex-start;
+    }
+    .msg.user {
+      background: linear-gradient(135deg, #7c3aed, #4f46e5);
+      color: #fff;
+      border-bottom-right-radius: 4px;
+      align-self: flex-end;
+    }
+    .msg.typing {
+      background: rgba(124,58,237,0.1);
+      border: 1px solid rgba(124,58,237,0.15);
+      color: #888;
+      align-self: flex-start;
+    }
+    .typing-dots span {
+      display: inline-block;
+      width: 6px; height: 6px;
+      background: #7c3aed;
+      border-radius: 50%;
+      margin: 0 2px;
+      animation: bounce 1.2s infinite;
+    }
+    .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce { 0%,60%,100%{ transform:translateY(0); } 30%{ transform:translateY(-6px); } }
+
+    .chat-suggestions {
+      padding: 8px 16px;
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      border-top: 1px solid rgba(255,255,255,0.05);
+    }
+    .suggestion-chip {
+      background: rgba(124,58,237,0.12);
+      border: 1px solid rgba(124,58,237,0.25);
+      color: #a78bfa;
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .suggestion-chip:hover { background: rgba(124,58,237,0.25); color: #fff; }
+
+    .chat-input-row {
+      padding: 12px 16px;
+      display: flex;
+      gap: 8px;
+      border-top: 1px solid rgba(255,255,255,0.05);
+    }
+    .chat-input {
+      flex: 1;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(124,58,237,0.2);
+      border-radius: 10px;
+      padding: 8px 12px;
+      color: #fff;
+      font-size: 13px;
+      outline: none;
+      font-family: inherit;
+      transition: border-color 0.2s;
+    }
+    .chat-input:focus { border-color: rgba(124,58,237,0.5); }
+    .chat-input::placeholder { color: #555; }
+    .chat-send {
+      background: linear-gradient(135deg, #7c3aed, #4f46e5);
+      border: none;
+      border-radius: 10px;
+      width: 36px; height: 36px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: opacity 0.2s;
+      flex-shrink: 0;
+    }
+    .chat-send:hover { opacity: 0.85; }
+    .chat-send svg { width: 16px; height: 16px; fill: white; }
+
+    /* ── LIVE DEMO BUTTON ───────────────────────────────── */
+    .proj-btn-demo {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      background: linear-gradient(135deg, #7c3aed22, #4f46e511);
+      border: 1px solid rgba(124,58,237,0.4);
+      border-radius: 8px;
+      color: #a78bfa;
+      font-size: 13px;
+      font-weight: 500;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .proj-btn-demo:hover {
+      background: linear-gradient(135deg, #7c3aed44, #4f46e522);
+      color: #c4b5fd;
+      border-color: rgba(124,58,237,0.7);
+    }
+    .live-dot {
+      width: 7px; height: 7px;
+      background: #22c55e;
+      border-radius: 50%;
+      animation: pulse-dot 2s infinite;
+    }
+
+    @media (max-width: 480px) {
+      .chat-window { width: calc(100vw - 32px); right: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-logo">
+      <span class="logo-bracket">&lt;</span>Adnan<span class="logo-slash">/</span><span class="logo-bracket">&gt;</span>
+    </div>
+    <ul class="nav-links">
+      <li><a href="#about">About</a></li>
+      <li><a href="#skills">Skills</a></li>
+      <li><a href="#projects">Projects</a></li>
+      <li><a href="#experience">Experience</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+    <a href="Adnan_Rahim_CV.pdf" target="_blank" class="nav-cv-btn">Download CV</a>
+    <button class="hamburger" id="hamburger">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+
+  <!-- MOBILE MENU -->
+  <div class="mobile-menu" id="mobileMenu">
+    <ul>
+      <li><a href="#about" onclick="closeMobile()">About</a></li>
+      <li><a href="#skills" onclick="closeMobile()">Skills</a></li>
+      <li><a href="#projects" onclick="closeMobile()">Projects</a></li>
+      <li><a href="#experience" onclick="closeMobile()">Experience</a></li>
+      <li><a href="#contact" onclick="closeMobile()">Contact</a></li>
+    </ul>
+  </div>
+
+  <!-- HERO -->
+  <section class="hero" id="home">
+    <div class="hero-bg">
+      <canvas id="particleCanvas"></canvas>
+    </div>
+    <div class="hero-content">
+      <div class="hero-tag">
+        <span class="status-dot"></span>
+        Open to internships & full-time roles in Europe
+      </div>
+      <h1 class="hero-title">
+        I build AI systems<br>
+        <span class="gradient-text">with drones, RAG & LLMs.</span>
+      </h1>
+      <p class="hero-sub">Adnan Rahim · AI Engineer & Builder · Budapest, Hungary</p>
+      <p class="hero-desc">
+        Computer Science graduate from ELTE, specialising in applied AI,
+        computer vision, and intelligent automation.
+        From autonomous drones to RAG pipelines — I don't just study AI, I ship it.
+      </p>
+      <div class="hero-buttons">
+        <a href="#projects" class="btn-primary">View My Projects</a>
+        <a href="#contact" class="btn-outline">Get In Touch</a>
+      </div>
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <span class="stat-num">4+</span>
+          <span class="stat-label">AI Projects</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="hero-stat">
+          <span class="stat-num">50+</span>
+          <span class="stat-label">Students Led</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="hero-stat">
+          <span class="stat-num">10+</span>
+          <span class="stat-label">Workshops Organised</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="hero-stat">
+          <span class="stat-num">3</span>
+          <span class="stat-label">Countries Worked</span>
+        </div>
+      </div>
+    </div>
+    <div class="hero-right">
+      <div class="avatar-wrapper">
+        <div class="avatar-ring outer"></div>
+        <div class="avatar-ring inner"></div>
+        <div class="avatar-circle">
+          <span>AR</span>
+        </div>
+        <div class="avatar-badge badge-1">
+          <span class="badge-icon">🤖</span> AI Engineer
+        </div>
+        <div class="avatar-badge badge-2">
+          <span class="badge-icon">🚁</span> Drone CV
+        </div>
+        <div class="avatar-badge badge-3">
+          <span class="badge-icon">🎓</span> ELTE Scholar
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section class="section" id="about">
+    <div class="container">
+      <div class="section-label">Who I Am</div>
+      <h2 class="section-title">About Me</h2>
+      <div class="about-grid">
+        <div class="about-text">
+          <p>I'm a Computer Science graduate from <strong>Eötvös Loránd University (ELTE)</strong>, Budapest, awarded the <strong>Stipendium Hungaricum Scholarship</strong> for academic merit.</p>
+          <p>My work sits at the intersection of AI, computer vision, and practical software engineering. I care about systems that actually run — not just notebooks that pass cells.</p>
+          <p>I led the ELTE AI Development Club as President, organised 10+ technical workshops, and built projects ranging from a real-time drone control system to a full RAG document Q&A pipeline. Currently seeking <strong>AI engineering or data science internships across Europe</strong>, with plans to pursue a Master's in AI or Robotics.</p>
+          <div class="about-links">
+            <a href="https://linkedin.com/in/adnan-rahim-565b90319" target="_blank" class="about-link">LinkedIn ↗</a>
+            <a href="https://github.com/rahim-adnan" target="_blank" class="about-link">GitHub ↗</a>
+            <a href="https://elte.hu/en/meet-our-students/adnan-rahim" target="_blank" class="about-link">ELTE Profile ↗</a>
+          </div>
+        </div>
+        <div class="about-cards">
+          <div class="info-card reveal">
+            <div class="info-card-icon">🎓</div>
+            <div>
+              <div class="info-card-label">Education</div>
+              <div class="info-card-value">BSc Computer Science</div>
+              <div class="info-card-sub">ELTE Budapest · 2022–2026</div>
+            </div>
+          </div>
+          <div class="info-card reveal">
+            <div class="info-card-icon">📍</div>
+            <div>
+              <div class="info-card-label">Location</div>
+              <div class="info-card-value">Budapest, Hungary</div>
+              <div class="info-card-sub">Open to relocate in Europe</div>
+            </div>
+          </div>
+          <div class="info-card reveal">
+            <div class="info-card-icon">🏆</div>
+            <div>
+              <div class="info-card-label">Scholarship</div>
+              <div class="info-card-value">Stipendium Hungaricum</div>
+              <div class="info-card-sub">Awarded for academic merit</div>
+            </div>
+          </div>
+          <div class="info-card reveal">
+            <div class="info-card-icon">🎯</div>
+            <div>
+              <div class="info-card-label">Goal</div>
+              <div class="info-card-value">Master's in AI / Robotics</div>
+              <div class="info-card-sub">Germany · Netherlands · Europe</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SKILLS -->
+  <section class="section section-alt" id="skills">
+    <div class="container">
+      <div class="section-label">What I Use</div>
+      <h2 class="section-title">Skills & Tools</h2>
+      <div class="skills-grid">
+        <div class="skill-group reveal">
+          <div class="skill-group-header">
+            <span class="skill-group-icon">🧠</span>
+            <span class="skill-group-title">AI & Computer Vision</span>
+          </div>
+          <div class="skill-tags">
+            <span class="tag">OpenCV</span><span class="tag">LangChain</span>
+            <span class="tag">FAISS</span><span class="tag">HuggingFace</span>
+            <span class="tag">spaCy</span><span class="tag">RAG</span>
+          </div>
+        </div>
+        <div class="skill-group reveal">
+          <div class="skill-group-header">
+            <span class="skill-group-icon">🤖</span>
+            <span class="skill-group-title">LLMs & Local AI</span>
+          </div>
+          <div class="skill-tags">
+            <span class="tag">Ollama</span><span class="tag">LLaMA 3</span>
+            <span class="tag">Groq API</span><span class="tag">Prompt Engineering</span>
+            <span class="tag">Vector Embeddings</span>
+          </div>
+        </div>
+        <div class="skill-group reveal">
+          <div class="skill-group-header">
+            <span class="skill-group-icon">💻</span>
+            <span class="skill-group-title">Languages</span>
+          </div>
+          <div class="skill-tags">
+            <span class="tag tag-highlight">Python (Advanced)</span>
+            <span class="tag">JavaScript</span><span class="tag">SQL</span>
+            <span class="tag">HTML / CSS</span>
+          </div>
+        </div>
+        <div class="skill-group reveal">
+          <div class="skill-group-header">
+            <span class="skill-group-icon">🌐</span>
+            <span class="skill-group-title">Web & APIs</span>
+          </div>
+          <div class="skill-tags">
+            <span class="tag">Flask</span><span class="tag">FastAPI</span>
+            <span class="tag">Streamlit</span><span class="tag">React</span>
+            <span class="tag">REST APIs</span>
+          </div>
+        </div>
+        <div class="skill-group reveal">
+          <div class="skill-group-header">
+            <span class="skill-group-icon">📊</span>
+            <span class="skill-group-title">Data</span>
+          </div>
+          <div class="skill-tags">
+            <span class="tag">pandas</span><span class="tag">NumPy</span>
+            <span class="tag">matplotlib</span><span class="tag">seaborn</span>
+            <span class="tag">BeautifulSoup</span>
+          </div>
+        </div>
+        <div class="skill-group reveal">
+          <div class="skill-group-header">
+            <span class="skill-group-icon">🛠️</span>
+            <span class="skill-group-title">Tools</span>
+          </div>
+          <div class="skill-tags">
+            <span class="tag">Git & GitHub</span><span class="tag">Linux CLI</span>
+            <span class="tag">Pydantic</span><span class="tag">Docker</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROJECTS -->
+  <section class="section" id="projects">
+    <div class="container">
+      <div class="section-label">What I've Built</div>
+      <h2 class="section-title">Featured Projects</h2>
+      <p class="section-desc">Real systems. Real problems. Real solutions.</p>
+      <div class="projects-grid">
+
+        <!-- PROJECT 1 — FEATURED (DRONE) -->
+        <div class="project-card project-featured reveal">
+          <div class="project-top">
+            <span class="project-badge badge-purple">BSc Thesis · Computer Vision</span>
+            <span class="project-year">2024–2025</span>
+          </div>
+          <h3 class="project-title">Autonomous Drone Control via Computer Vision</h3>
+          <div class="project-pillars">
+            <div class="pillar">
+              <span class="pillar-label">Problem</span>
+              <p>Controlling drones requires dedicated hardware controllers and extra software — limiting accessibility and real-world usability.</p>
+            </div>
+            <div class="pillar">
+              <span class="pillar-label">Solution</span>
+              <p>Browser-based control system for a physical Tello drone. Real-time face detection, line following, and colour tracking — no extra software needed.</p>
+            </div>
+            <div class="pillar">
+              <span class="pillar-label">Impact</span>
+              <p>Complete hardware-integrated AI system delivered as undergraduate thesis. Real-time CV pipeline adjusting drone flight from live camera frames.</p>
+            </div>
+          </div>
+          <div class="project-tags">
+            <span class="tech-tag">Python</span>
+            <span class="tech-tag">OpenCV</span>
+            <span class="tech-tag">Flask</span>
+            <span class="tech-tag">Real-Time Systems</span>
+            <span class="tech-tag">Web Streaming</span>
+          </div>
+          <div class="project-actions">
+            <a href="https://github.com/rahim-adnan" target="_blank" class="proj-btn">GitHub →</a>
+            <a href="https://www.youtube.com/@rahim-adnan" target="_blank" class="proj-btn-demo">
+              <span class="live-dot"></span> Demo Video →
+            </a>
+          </div>
+        </div>
+
+        <!-- PROJECT 2 — AI PDF Q&A -->
+        <div class="project-card reveal">
+          <div class="project-top">
+            <span class="project-badge badge-blue">RAG · Full-Stack</span>
+            <span class="project-year">2026</span>
+          </div>
+          <h3 class="project-title">AI PDF Q&A — RAG Application</h3>
+          <div class="project-pillars">
+            <div class="pillar">
+              <span class="pillar-label">Problem</span>
+              <p>Extracting specific answers from long PDFs is slow and requires reading everything manually.</p>
+            </div>
+            <div class="pillar">
+              <span class="pillar-label">Solution</span>
+              <p>Upload any PDF, ask questions in plain English. FAISS semantic search + HuggingFace embeddings + LLaMA 3.1 via Groq for grounded answers.</p>
+            </div>
+            <div class="pillar">
+              <span class="pillar-label">Impact</span>
+              <p>End-to-end RAG pipeline covering chunking, embedding, retrieval and generation — a production-pattern system most courses skip.</p>
+            </div>
+          </div>
+          <div class="project-tags">
+            <span class="tech-tag">Python</span><span class="tech-tag">LangChain</span>
+            <span class="tech-tag">FAISS</span><span class="tech-tag">React</span>
+            <span class="tech-tag">Groq</span>
+          </div>
+          <div class="project-actions">
+            <a href="https://github.com/rahim-adnan" target="_blank" class="proj-btn">GitHub →</a>
+            <a href="https://ai-pdf-qa.vercel.app/" target="_blank" class="proj-btn-demo">
+              <span class="live-dot"></span> Live Demo →
+            </a>
+          </div>
+        </div>
+
+        <!-- PROJECT 3 — CV TRACKER -->
+        <div class="project-card reveal">
+          <div class="project-top">
+            <span class="project-badge badge-teal">NLP · Web App</span>
+            <span class="project-year">2026</span>
+          </div>
+          <h3 class="project-title">Tech Career Skill Tracker</h3>
+          <div class="project-pillars">
+            <div class="pillar">
+              <span class="pillar-label">Problem</span>
+              <p>Job seekers don't know exactly which skills they're missing for roles they want.</p>
+            </div>
+            <div class="pillar">
+              <span class="pillar-label">Solution</span>
+              <p>Upload your CV, the app fetches live jobs from RemoteOK and WeWorkRemotely, detects 60+ tech skills via NLP, and shows a gap analysis instantly.</p>
+            </div>
+            <div class="pillar">
+              <span class="pillar-label">Impact</span>
+              <p>Automates hours of manual research into seconds. Combines NLP, scraping, and data analysis in one practical, product-thinking tool.</p>
+            </div>
+          </div>
+          <div class="project-tags">
+            <span class="tech-tag">Python</span><span class="tech-tag">Streamlit</span>
+            <span class="tech-tag">spaCy</span><span class="tech-tag">BeautifulSoup</span>
+            <span class="tech-tag">pandas</span>
+          </div>
+          <div class="project-actions">
+            <a href="https://github.com/rahim-adnan/tech-career-skill-tracker" target="_blank" class="proj-btn">GitHub →</a>
+            <a href="https://tech-career-skill-tracker.onrender.com" target="_blank" class="proj-btn-demo">
+              <span class="live-dot"></span> Live Demo →
+            </a>
+          </div>
+        </div>
+
+        <!-- PROJECT 4 — RESEARCH TRACKER + INTERVIEW COACH -->
+        <div class="project-card reveal">
+          <div class="project-top">
+            <span class="project-badge badge-amber">Local LLM · Dual Tool</span>
+            <span class="project-year">2026</span>
+          </div>
+          <h3 class="project-title">AI Research Tracker & Interview Coach</h3>
+          <div class="project-pillars">
+            <div class="pillar">
+              <span class="pillar-label">Problem</span>
+              <p>Keeping up with AI research is overwhelming. Interview prep tools all require paid APIs.</p>
+            </div>
+            <div class="pillar">
+              <span class="pillar-label">Solution</span>
+              <p>Two local-first tools: daily arXiv paper summariser + role-specific interview coach scoring answers across 5 dimensions. Both run offline via Ollama.</p>
+            </div>
+            <div class="pillar">
+              <span class="pillar-label">Impact</span>
+              <p>Fully private, free, and fast. Demonstrates local LLM deployment — an enterprise-relevant skill most students don't have.</p>
+            </div>
+          </div>
+          <div class="project-tags">
+            <span class="tech-tag">FastAPI</span><span class="tech-tag">Streamlit</span>
+            <span class="tech-tag">Ollama</span><span class="tech-tag">LLaMA 3</span>
+          </div>
+          <div class="project-actions">
+            <a href="https://github.com/rahim-adnan" target="_blank" class="proj-btn">GitHub →</a>
+            <a href="https://ai-research-tracker-8dkqm8qzruutaojrdtsvbx.streamlit.app/" target="_blank" class="proj-btn-demo">
+              <span class="live-dot"></span> Research Tracker →
+            </a>
+            <a href="https://interview-coach-adnan.streamlit.app/" target="_blank" class="proj-btn-demo">
+              <span class="live-dot"></span> Interview Coach →
+            </a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- EXPERIENCE -->
+  <section class="section section-alt" id="experience">
+    <div class="container">
+      <div class="section-label">Where I've Been</div>
+      <h2 class="section-title">Experience</h2>
+      <div class="timeline">
+        <div class="timeline-item reveal">
+          <div class="timeline-dot"></div>
+          <div class="timeline-content">
+            <div class="timeline-header">
+              <div>
+                <h3 class="timeline-title">President, AI Development Club</h3>
+                <p class="timeline-org">ELTE University · Budapest, Hungary</p>
+              </div>
+              <span class="timeline-date">Feb 2024 – Jul 2025</span>
+            </div>
+            <ul class="timeline-bullets">
+              <li>Led a student AI community of <strong>50+ members</strong> as elected President</li>
+              <li>Organised <strong>10+ technical workshops</strong> on ML, computer vision, and AI ethics</li>
+              <li>Managed end-to-end delivery of <strong>3 AI projects</strong> from concept to demo — acting as both technical lead and project manager</li>
+            </ul>
+            <div class="timeline-tags">
+              <span class="tl-tag">Leadership</span>
+              <span class="tl-tag">AI</span>
+              <span class="tl-tag">Project Management</span>
+            </div>
+          </div>
+        </div>
+        <div class="timeline-item reveal">
+          <div class="timeline-dot"></div>
+          <div class="timeline-content">
+            <div class="timeline-header">
+              <div>
+                <h3 class="timeline-title">Front-End Web Developer Intern</h3>
+                <p class="timeline-org">Limelight Renhold AS · Oslo, Norway (Remote)</p>
+              </div>
+              <span class="timeline-date">Oct – Dec 2024</span>
+            </div>
+            <ul class="timeline-bullets">
+              <li>Built responsive front-end interfaces using modern JavaScript for a Norwegian company</li>
+              <li>Refactored legacy components, reducing load times and improving maintainability</li>
+              <li>Delivered production-ready work remotely across international time zones</li>
+            </ul>
+            <div class="timeline-tags">
+              <span class="tl-tag">JavaScript</span>
+              <span class="tl-tag">Remote</span>
+              <span class="tl-tag">Front-End</span>
+            </div>
+          </div>
+        </div>
+        <div class="timeline-item reveal">
+          <div class="timeline-dot"></div>
+          <div class="timeline-content">
+            <div class="timeline-header">
+              <div>
+                <h3 class="timeline-title">Learning Methodology Demonstrator</h3>
+                <p class="timeline-org">ELTE University · Budapest, Hungary</p>
+              </div>
+              <span class="timeline-date">Sep 2023 – Jul 2025</span>
+            </div>
+            <ul class="timeline-bullets">
+              <li>Co-facilitated the Learning Methodology course for incoming university students</li>
+              <li>Supported students in adjusting to university life and academic expectations</li>
+            </ul>
+            <div class="timeline-tags">
+              <span class="tl-tag">Teaching</span>
+              <span class="tl-tag">Mentoring</span>
+            </div>
+          </div>
+        </div>
+        <div class="timeline-item reveal">
+          <div class="timeline-dot"></div>
+          <div class="timeline-content">
+            <div class="timeline-header">
+              <div>
+                <h3 class="timeline-title">International Student Ambassador</h3>
+                <p class="timeline-org">ELTE University · Budapest, Hungary</p>
+              </div>
+              <span class="timeline-date">2024 – 2025</span>
+            </div>
+            <ul class="timeline-bullets">
+              <li>Represented ELTE at school visits and educational events across Hungary</li>
+              <li>Featured on the <a href="https://elte.hu/en/meet-our-students/adnan-rahim" target="_blank" class="inline-link">official ELTE website</a> as a Student Ambassador</li>
+            </ul>
+            <div class="timeline-tags">
+              <span class="tl-tag">Representation</span>
+              <span class="tl-tag">Community</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section class="section" id="contact">
+    <div class="container">
+      <div class="section-label">Let's Talk</div>
+      <h2 class="section-title">Get In Touch</h2>
+      <div class="contact-wrapper">
+        <div class="contact-left">
+          <p class="contact-desc">I'm actively looking for <strong>internships and entry-level AI/ML roles in Europe</strong> — particularly in Germany, the Netherlands, and beyond. If you're working on something interesting or want to collaborate, I'd love to hear from you.</p>
+          <div class="contact-items">
+            <a href="mailto:rahim.adnanr@gmail.com" class="contact-item">
+              <span class="contact-item-icon">📧</span>
+              <div>
+                <div class="contact-item-label">Email</div>
+                <div class="contact-item-value">rahim.adnanr@gmail.com</div>
+              </div>
+            </a>
+            <a href="https://linkedin.com/in/adnan-rahim-565b90319" target="_blank" class="contact-item">
+              <span class="contact-item-icon">🔗</span>
+              <div>
+                <div class="contact-item-label">LinkedIn</div>
+                <div class="contact-item-value">adnan-rahim-565b90319</div>
+              </div>
+            </a>
+            <a href="https://github.com/rahim-adnan" target="_blank" class="contact-item">
+              <span class="contact-item-icon">🐙</span>
+              <div>
+                <div class="contact-item-label">GitHub</div>
+                <div class="contact-item-value">rahim-adnan</div>
+              </div>
+            </a>
+          </div>
+        </div>
+        <div class="contact-right">
+          <a href="Adnan_Rahim_CV.pdf" target="_blank" class="cv-download-card">
+            <div class="cv-icon">📄</div>
+            <div class="cv-text">
+              <div class="cv-title">Download My CV</div>
+              <div class="cv-sub">PDF · Updated 2025</div>
+            </div>
+            <div class="cv-arrow">↓</div>
+          </a>
+          <div class="availability-card">
+            <div class="avail-dot"></div>
+            <div>
+              <div class="avail-title">Available for opportunities</div>
+              <div class="avail-sub">Internships · Full-time · Remote · Relocation</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div class="footer-logo">
+        <span class="logo-bracket">&lt;</span>Adnan<span class="logo-slash">/</span><span class="logo-bracket">&gt;</span>
+      </div>
+      <p class="footer-text">Built from scratch with HTML, CSS & JavaScript · © 2025 Adnan Rahim</p>
+      <div class="footer-links">
+        <a href="https://github.com/rahim-adnan" target="_blank">GitHub</a>
+        <a href="https://linkedin.com/in/adnan-rahim-565b90319" target="_blank">LinkedIn</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- AI CHATBOT -->
+  <button class="chat-bubble" id="chatBubble" title="Ask me anything!">
+    <div class="chat-pulse"></div>
+    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.85.5 3.58 1.37 5.06L2 22l4.94-1.37A9.953 9.953 0 0012 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm-1 14H7v-2h4v2zm6 0h-4v-2h4v2zm0-4H7V8h10v4z"/></svg>
+  </button>
+
+  <div class="chat-window" id="chatWindow">
+    <div class="chat-header">
+      <div class="chat-header-avatar">🤖</div>
+      <div class="chat-header-info">
+        <div class="chat-header-name">Adnan's AI Assistant</div>
+        <div class="chat-header-status">● Online — Ask me anything!</div>
+      </div>
+      <button class="chat-close" id="chatClose">✕</button>
+    </div>
+    <div class="chat-messages" id="chatMessages">
+      <div class="msg bot">
+        👋 Hi! I'm Adnan's AI assistant. I can answer questions about his skills, projects, experience, and background. What would you like to know?
+      </div>
+    </div>
+    <div class="chat-suggestions" id="chatSuggestions">
+      <span class="suggestion-chip" onclick="sendSuggestion('What are your main skills?')">Skills</span>
+      <span class="suggestion-chip" onclick="sendSuggestion('Tell me about your projects')">Projects</span>
+      <span class="suggestion-chip" onclick="sendSuggestion('Are you open to work?')">Availability</span>
+      <span class="suggestion-chip" onclick="sendSuggestion('What is your background?')">Background</span>
+    </div>
+    <div class="chat-input-row">
+      <input class="chat-input" id="chatInput" type="text" placeholder="Ask me anything about Adnan..." />
+      <button class="chat-send" id="chatSend">
+        <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+  <script>
+    // ── CHATBOT LOGIC ──────────────────────────────────────
+    const chatBubble = document.getElementById('chatBubble');
+    const chatWindow = document.getElementById('chatWindow');
+    const chatClose  = document.getElementById('chatClose');
+    const chatInput  = document.getElementById('chatInput');
+    const chatSend   = document.getElementById('chatSend');
+    const chatMessages = document.getElementById('chatMessages');
+
+    chatBubble.addEventListener('click', () => chatWindow.classList.toggle('open'));
+    chatClose.addEventListener('click', () => chatWindow.classList.remove('open'));
+
+    chatSend.addEventListener('click', sendMessage);
+    chatInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendMessage(); });
+
+    function sendSuggestion(text) {
+      chatInput.value = text;
+      sendMessage();
+    }
+
+    function addMsg(text, type) {
+      const div = document.createElement('div');
+      div.className = `msg ${type}`;
+      div.textContent = text;
+      chatMessages.appendChild(div);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+      return div;
+    }
+
+    function showTyping() {
+      const div = document.createElement('div');
+      div.className = 'msg typing';
+      div.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
+      chatMessages.appendChild(div);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+      return div;
+    }
+
+    async function sendMessage() {
+      const text = chatInput.value.trim();
+      if (!text) return;
+      chatInput.value = '';
+
+      addMsg(text, 'user');
+      const typingEl = showTyping();
+
+      try {
+        const response = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: 'claude-sonnet-4-20250514',
+            max_tokens: 300,
+            system: `You are Adnan Rahim's personal AI assistant on his portfolio website. Answer questions about Adnan warmly and professionally. Keep answers SHORT (2-4 sentences max).
+
+ABOUT ADNAN:
+- Name: Adnan Rahim
+- Role: AI Engineer & Builder
+- Location: Budapest, Hungary (open to relocate in Europe)
+- Education: BSc Computer Science, Eötvös Loránd University (ELTE), 2022-2026
+- Scholarship: Stipendium Hungaricum (awarded for academic merit)
+- Goal: Master's in AI/Robotics in Germany or Netherlands
+
+SKILLS: Python (Advanced), OpenCV, LangChain, FAISS, HuggingFace, spaCy, RAG, Ollama, LLaMA 3, Groq API, Prompt Engineering, Flask, FastAPI, Streamlit, React, pandas, NumPy, Git, Docker, SQL
+
+PROJECTS:
+1. Autonomous Drone Control (BSc Thesis) - Python, OpenCV, Flask - real Tello drone with face tracking, line following, colour tracking via browser
+2. AI PDF Q&A RAG App - LangChain, FAISS, HuggingFace, React, Groq - live at ai-pdf-qa.vercel.app
+3. Tech Career Skill Tracker - Python, Streamlit, spaCy - live at tech-career-skill-tracker.onrender.com
+4. AI Research Tracker & Interview Coach - FastAPI, Streamlit, Ollama, LLaMA 3 - two tools running locally
+
+EXPERIENCE:
+- President, AI Development Club at ELTE (50+ members, 10+ workshops)
+- Front-End Web Developer Intern at Limelight Renhold AS, Oslo, Norway (remote)
+- Learning Methodology Demonstrator at ELTE
+- International Student Ambassador at ELTE
+
+CONTACT: rahim.adnanr@gmail.com | LinkedIn: adnan-rahim-565b90319 | GitHub: rahim-adnan
+AVAILABILITY: Actively seeking AI/ML internships and entry-level roles in Europe, especially Germany and Netherlands.`,
+            messages: [{ role: 'user', content: text }]
+          })
+        });
+
+        const data = await response.json();
+        typingEl.remove();
+        const reply = data.content?.[0]?.text || "Sorry, I couldn't get a response. Please email Adnan directly at rahim.adnanr@gmail.com";
+        addMsg(reply, 'bot');
+      } catch (err) {
+        typingEl.remove();
+        addMsg("Sorry, I'm having trouble connecting. Please reach out to Adnan directly at rahim.adnanr@gmail.com 📧", 'bot');
+      }
+    }
+  </script>
+</body>
+</html>
