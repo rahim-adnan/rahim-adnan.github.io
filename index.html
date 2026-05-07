@@ -510,7 +510,7 @@ body::after {
 .live-dot { width: 5px; height: 5px; background: var(--green); border-radius: 50%; animation: pulse 2.4s infinite; flex-shrink: 0; }
 
 /* Small cards */
-.cards-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
+.cards-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 8px; }
 .card {
   background: var(--bg1); border: 1px solid var(--bd);
   border-radius: var(--r-lg); padding: 26px 22px;
@@ -788,7 +788,7 @@ body::after {
       </div>
       <div class="hero-stats">
         <div class="stat">
-          <div class="stat-n">4<sup>+</sup></div>
+          <div class="stat-n">6<sup>+</sup></div>
           <div class="stat-l">Projects Shipped</div>
         </div>
         <div class="stat">
@@ -856,7 +856,7 @@ body::after {
     </div>
     <div class="skill-grid rv">
       <div class="sk"><div class="sk-head">AI &amp; Computer Vision</div><div class="pills"><span class="pill">OpenCV</span><span class="pill">LangChain</span><span class="pill">FAISS</span><span class="pill">HuggingFace</span><span class="pill">spaCy</span><span class="pill">RAG</span><span class="pill">MediaPipe</span></div></div>
-      <div class="sk"><div class="sk-head">LLMs &amp; AI APIs</div><div class="pills"><span class="pill">LLaMA 3</span><span class="pill">Groq API</span><span class="pill">Ollama</span><span class="pill">Prompt Engineering</span><span class="pill">Embeddings</span></div></div>
+      <div class="sk"><div class="sk-head">LLMs &amp; AI APIs</div><div class="pills"><span class="pill">LLaMA 3</span><span class="pill">Groq API</span><span class="pill">Ollama</span><span class="pill">Prompt Engineering</span><span class="pill">Embeddings</span><span class="pill">AI Agents</span></div></div>
       <div class="sk"><div class="sk-head">Languages</div><div class="pills"><span class="pill">Python (Advanced)</span><span class="pill">JavaScript</span><span class="pill">SQL</span><span class="pill">HTML / CSS</span></div></div>
       <div class="sk"><div class="sk-head">Web &amp; APIs</div><div class="pills"><span class="pill">FastAPI</span><span class="pill">Flask</span><span class="pill">Streamlit</span><span class="pill">React</span><span class="pill">REST APIs</span></div></div>
       <div class="sk"><div class="sk-head">Data</div><div class="pills"><span class="pill">pandas</span><span class="pill">NumPy</span><span class="pill">matplotlib</span><span class="pill">seaborn</span><span class="pill">BeautifulSoup</span></div></div>
@@ -896,33 +896,22 @@ body::after {
       </div>
     </div>
 
-    <!-- MedExplain -->
-    <div class="proj-hero rv">
-      <div class="ph-img">
-        <div class="ph-placeholder">
-          <div class="ph-glyph">⚕️</div>
-          <div class="ph-lbl">Medical AI · Full Stack</div>
-        </div>
-      </div>
-      <div class="ph-body">
-        <div>
-          <div class="proj-meta">
-            <span class="proj-badge">Medical AI · Full-Stack</span>
-            <span class="proj-yr">2026</span>
-          </div>
-          <h3 class="proj-name">MedExplain AI — Medical Report Explainer</h3>
-          <p class="proj-desc">Upload any blood test or lab report PDF — LLaMA 3 analyses every value, flags abnormal results in plain English, and generates smart questions to ask your doctor. Supports 7 languages.</p>
-          <div class="proj-stack"><span class="stag">Python</span><span class="stag">Flask</span><span class="stag">LLaMA 3</span><span class="stag">Groq</span><span class="stag">PyMuPDF</span><span class="stag">HTML/CSS/JS</span></div>
-        </div>
-        <div class="proj-links">
-          <a href="https://github.com/rahim-adnan/medical-report-explainer" target="_blank" class="pl-pri">GitHub →</a>
-          <a href="#" class="pl-sec"><span class="live-dot"></span>Live Demo</a>
-        </div>
-      </div>
-    </div>
-
     <!-- Cards -->
     <div class="cards-grid">
+      <div class="card rv">
+        <div class="proj-meta"><span class="proj-badge">Medical AI · Full-Stack</span><span class="proj-yr">2026</span></div>
+        <h3 class="proj-name">MedExplain AI — Medical Report Explainer</h3>
+        <p class="proj-desc">Upload any blood test or lab report PDF — LLaMA 3 analyses every value, flags abnormal results in plain English, and generates smart questions to ask your doctor. Supports 7 languages.</p>
+        <div class="proj-stack"><span class="stag">Python</span><span class="stag">Flask</span><span class="stag">LLaMA 3</span><span class="stag">Groq</span><span class="stag">PyMuPDF</span><span class="stag">HTML/CSS/JS</span></div>
+        <div class="proj-links"><a href="https://github.com/rahim-adnan/medical-report-explainer" target="_blank" class="pl-pri">GitHub →</a><a href="#" class="pl-sec"><span class="live-dot"></span>Live Demo</a></div>
+      </div>
+      <div class="card rv">
+        <div class="proj-meta"><span class="proj-badge">Agentic AI · LLM</span><span class="proj-yr">2026</span></div>
+        <h3 class="proj-name">Web Research Agent</h3>
+        <p class="proj-desc">Autonomous agent that plans its own searches, reads web pages, reflects on coverage gaps, and synthesises a structured research report — all in real time.</p>
+        <div class="proj-stack"><span class="stag">Python</span><span class="stag">LLaMA 3.3</span><span class="stag">Groq</span><span class="stag">DuckDuckGo</span><span class="stag">Streamlit</span></div>
+        <div class="proj-links"><a href="https://github.com/rahim-adnan/web-research-agent" target="_blank" class="pl-pri">GitHub →</a><a href="https://web-research-agent-gnfbaqvpde4eucjsotaydc.streamlit.app/" target="_blank" class="pl-sec"><span class="live-dot"></span>Live</a></div>
+      </div>
       <div class="card rv">
         <div class="proj-meta"><span class="proj-badge">RAG · Full-Stack</span><span class="proj-yr">2026</span></div>
         <h3 class="proj-name">AI PDF Q&amp;A App</h3>
